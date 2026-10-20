@@ -1,0 +1,28 @@
+name: mlops-ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  validate-train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: ruff check src scripts tests
+      - run: pytest -q
+      - name: Download data and smoke train
+        run: python -m scripts.fetch_data && python -m scripts.train --quick
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mlops-run-outputs
+          path: |
+            artifacts/
+            reports/figures/
+            mlruns/
+          if-no-files-found: ignore

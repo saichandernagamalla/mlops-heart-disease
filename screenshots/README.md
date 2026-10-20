@@ -1,0 +1,1 @@
+Store genuine screenshots of your own execution here: EDA figures, MLflow runs, GitHub Actions, Docker build/API checks, and Kubernetes deployment/API access. Do not add fabricated captures. Reference filenames in `reports/FINAL_REPORT.md`.
