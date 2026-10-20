@@ -1,3 +1,7 @@
+param(
+    [string]$PackageIndex = "https://pypi.org/simple"
+)
+
 $ErrorActionPreference = "Stop"
 
 $imageName = "heart-mlops:local"
@@ -5,7 +9,7 @@ $containerName = "heart-api-verification"
 $containerId = $null
 $baseUrl = "http://127.0.0.1:8000"
 
-docker build -t $imageName .
+docker build --build-arg "PIP_INDEX_URL=$PackageIndex" -t $imageName .
 if ($LASTEXITCODE -ne 0) {
     throw "Docker image build failed with exit code $LASTEXITCODE."
 }
@@ -35,21 +39,7 @@ try {
         throw "The container did not report a loaded model at /health."
     }
 
-    $sample = @{
-        age = 63
-        sex = 1
-        cp = 3
-        trestbps = 145
-        chol = 233
-        fbs = 1
-        restecg = 0
-        thalach = 150
-        exang = 0
-        oldpeak = 2.3
-        slope = 0
-        ca = 0
-        thal = 1
-    } | ConvertTo-Json
+    $sample = Get-Content -LiteralPath (Join-Path $PSScriptRoot "sample_patient.json") -Raw
 
     $prediction = Invoke-RestMethod `
         -Method Post `
@@ -61,8 +51,8 @@ try {
     if ($prediction.prediction -notin @(0, 1)) {
         throw "The /predict response did not contain a binary class."
     }
-    if ($null -eq $prediction.confidence_positive) {
-        throw "The /predict response did not contain confidence_positive."
+    if ($null -eq $prediction.confidence_positive -or $prediction.confidence_positive -lt 0 -or $prediction.confidence_positive -gt 1) {
+        throw "The /predict response did not contain a probability between 0 and 1."
     }
     if ($metrics.StatusCode -ne 200 -or $metrics.Content -notmatch "prediction_requests_total") {
         throw "The /metrics endpoint did not return Prometheus prediction metrics."

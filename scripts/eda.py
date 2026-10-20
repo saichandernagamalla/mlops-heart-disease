@@ -62,6 +62,8 @@ def main():
         mlflow.log_param("rows", len(df))
         mlflow.log_param("features", len(FEATURES))
         mlflow.log_metric("positive_fraction", float(df[TARGET].mean()))
+        mlflow.log_artifact("reports/descriptive_statistics.csv")
+        mlflow.log_artifact("reports/missing_values.csv")
         for image in out.glob("*.png"):
             mlflow.log_artifact(str(image), artifact_path="eda")
     print("EDA outputs saved under reports/figures")

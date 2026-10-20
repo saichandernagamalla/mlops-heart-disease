@@ -13,10 +13,16 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: ruff check src scripts tests
-      - run: pytest -q
-      - name: Download data and smoke train
-        run: python -m scripts.fetch_data && python -m scripts.train --quick
+      - name: Lint
+        run: python -m ruff check src scripts tests
+      - name: Unit tests
+        run: python -m pytest -q --junitxml=reports/test-results.xml
+      - name: Download official data
+        run: python -m scripts.fetch_data
+      - name: Generate and track EDA
+        run: python -m scripts.eda
+      - name: Train and track models
+        run: python -m scripts.train --quick
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -24,5 +30,8 @@ jobs:
           path: |
             artifacts/
             reports/figures/
+            reports/test-results.xml
+            reports/descriptive_statistics.csv
+            reports/missing_values.csv
             mlruns/
           if-no-files-found: ignore

@@ -15,7 +15,7 @@
         "recall": 0.08573061442220714,
         "roc_auc": 0.021267059896051755
       },
-      "run_id": "e02809a6f0db418ab9e3b9dcec0408a9"
+      "run_id": "4d88ab364a134c2c809f9c4557d5f305"
     },
     "random_forest": {
       "mean": {
@@ -30,7 +30,7 @@
         "recall": 0.04375888492727052,
         "roc_auc": 0.020444548703048782
       },
-      "run_id": "8a6502f6b0b34a49b2026dc96c941a0d"
+      "run_id": "7321589e77164a649ac9d077fcd14619"
     }
   },
   "tuned_best_params": {
@@ -52,5 +52,6 @@
     "ca",
     "thal"
   ],
-  "seed": 42
+  "seed": 42,
+  "final_run_id": "a7f870e2af164e1ea71d50eff5ee422f"
 }

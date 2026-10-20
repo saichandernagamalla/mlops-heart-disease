@@ -2,10 +2,11 @@
 
 **Course:** Machine Learning Operations (MLOps) AIMLCZG523  
 **Assignment:** 01  
-**Author:** [Your name]  
-**Date:** [Submission date]  
-**Repository:** [Add your repository URL]  
-**Deployment:** [Add verified URL or local access instructions]
+**Author:** SAI CHANDER NAGAMALLA  
+**Student ID:** 2025AE05029  
+**Date:** 20 October 2026  
+**Repository:** https://github.com/saichandernagamalla/mlops-heart-disease  
+**Local access:** MLflow at `http://127.0.0.1:5000`; verified Docker API and dashboard at `http://localhost:8001/monitor`. Docker Desktop Kubernetes requires an enabled, ready cluster.
 
 > Educational demonstration only. This artifact is not a medical device and cannot be used for clinical decisions.
 
@@ -17,7 +18,17 @@ This project demonstrates a pipeline that predicts heart disease presence in the
 
 The dataset comes from the UCI Machine Learning Repository, Heart Disease dataset (DOI: 10.24432/C52P4X). The acquisition script fetches the processed Cleveland file from the official archive. It contains 303 rows, 13 selected predictors, and the binary outcome under the mapping above. Missing `?` tokens remain null for pipeline imputation.
 
-Insert generated figures from `reports/figures/` here and discuss observed class balance, distributions, missingness, and correlations. Coded category correlations are descriptive only because codes need not have interval meaning. Attach your actual EDA outputs.
+The cleaned dataset contains 164 negative records (54.1%) and 139 positive records (45.9%). Missingness is limited to four `ca` values and two `thal` values. No rows are discarded; preprocessing imputes those cells within each training fold. Five continuous measurements are scaled and eight coded categorical predictors are encoded.
+
+![Class balance](figures/class_balance.png)
+
+Positive records have lower average maximum heart rate (139.26 versus 158.38) and higher average ST depression (1.57 versus 0.59). Mean age is 56.63 versus 52.59 years. The distributions overlap substantially and do not imply individual clinical predictions.
+
+![Feature distributions](figures/feature_distributions.png)
+
+Maximum heart rate correlates negatively with the target (-0.417); ST depression correlates positively (0.425). Category-code correlations are descriptive only because codes need not have interval meaning, and none of these associations establish causation.
+
+![Exploratory correlations](figures/correlation_heatmap.png)
 
 ## 3. Feature processing and model selection
 
@@ -36,6 +47,16 @@ Logistic Regression was selected by mean ROC-AUC (0.9188 vs. 0.9154). Its mean a
 
 MLflow experiment: `uci-heart-disease-assignment`. Candidate runs record seed, CV procedure, metric means and standard deviations. The EDA run logs figures. The selected pipeline is stored as `artifacts/model.joblib`, with parameters and CV summary in `artifacts/training_summary.json`. Dependencies are listed in `requirements.txt`; stochastic operations use seed 42. The final MLflow model includes an inferred input/output signature and a three-row input example so its expected schema is visible in the run artifacts.
 
+The latest four finished runs are tagged `recording_demo=ready`. Both candidates also log their estimator parameters, per-fold metric arrays, out-of-fold confusion matrices, and ROC curves. The final run logs the complete tuning results, selected parameters, reusable model and diagnostic plots. Its diagnostics use the same development folds after tuning, not independent validation.
+
+- Logistic Regression run: `4d88ab364a134c2c809f9c4557d5f305`.
+- Random Forest run: `7321589e77164a649ac9d077fcd14619`.
+- Final tuned run: `a7f870e2af164e1ea71d50eff5ee422f`.
+- EDA run: `acd0dfed6e1048f6bd0c9fa07258af50`.
+- [Live local experiment](http://127.0.0.1:5000/#/experiments/144320529290097270).
+
+![Refreshed finished MLflow runs](../screenshots/mlflow_experiments.png)
+
 ## 5. System architecture
 
 ```mermaid
@@ -47,35 +68,44 @@ flowchart LR
   T --> M[model.joblib]
   M --> C[Docker image]
   C --> A[FastAPI /predict]
-  A --> P[/health and /metrics]
+  C --> K[Kubernetes LoadBalancer]
+  K --> A
+  A --> P[/health, /metrics, /monitor and request logs]
   G[GitHub Actions] --> Q[lint, tests, training smoke]
 ```
 
 ## 6. CI/CD and testing
 
-GitHub Actions installs dependencies, runs Ruff and unit tests, downloads the dataset, performs a reduced training run, and uploads artifacts. Tests cover target conversion/missing values and API health/prediction response shape. The supplied Actions screenshot shows two runs on `master`, both failed: `mlops-ci #2` for commit `44a7ee3` (45 seconds) and `mlops-ci #1` for commit `372cc59` (57 seconds). This confirms the workflow was triggered, but CI is not yet passing. The run-list screenshot does not show job logs, so the failure cause remains to be diagnosed. Inspect the logs, fix the failure, rerun the workflow, and capture a successful run before submission.
+GitHub Actions installs dependencies, runs Ruff and unit tests, downloads the dataset, generates and tracks EDA, performs a reduced training run, and uploads model, tracking, figure and JUnit artifacts even on failure. The local checkout passes Ruff and **12 tests**. Tests cover both target classes and missingness, preprocessing, unseen categories, both model pipelines, serialization round trips, probability bounds, HTTP prediction contracts, unavailable models, invalid category rejection, metrics, and privacy-preserving request logs.
+
+The latest observed remote run, [39466244558](https://github.com/saichandernagamalla/mlops-heart-disease/actions/runs/39466244558), failed at `pytest -q`. The exact command was reproduced locally: both test modules failed collection with `ModuleNotFoundError: No module named 'src'`. The repository now has `pytest.ini` setting the project import root; the workflow also invokes `python -m pytest`. Repeating the formerly failing entry point now yields **12 passed**. A new remote success is not claimed: the author requested local-only changes and must commit and push before capturing a passing Actions run.
 
 ![GitHub Actions workflow runs showing both runs failed](../screenshots/github_actions_ci.png)
 
 ## 7. Packaging, API, and deployment
 
-FastAPI serves the trained pipeline through `POST /predict`. Its request schema validates the 13 model features, and its response includes a binary prediction, a positive/negative label, and positive-class confidence. `GET /health` reports whether the model is loaded; `GET /metrics` exposes Prometheus request and latency data. Docker packages the API with the trained artifact, and the Kubernetes manifest supports Minikube with a NodePort and health probes.
+FastAPI serves the trained pipeline through `POST /predict`. Its response includes a binary prediction, a positive/negative label, and positive-class confidence. The schema uses the original UCI codes, including `slope=1..3` and `thal` in `{3,6,7}`; remapped dataset codes are rejected with HTTP 422. `GET /health` returns HTTP 503 when no model is loaded, making readiness probes meaningful. Docker packages the fitted pipeline under a non-root user. The Kubernetes manifest includes resource limits, probes and a **LoadBalancer** service.
 
-**Container verification (Linux, 20 October 2026):** The image was built and the API was run on the Linux host with port 8000 published at `http://localhost:8000`. A sample 13-feature JSON request to `POST /predict` returned `{"prediction":0,"label":"negative","confidence_positive":0.355847}`. This confirms the packaged model loaded and served an inference response in the container.
+**Reproducible verification:** `scripts/verify_container.ps1` builds the image, waits for model readiness, sends the shared sample JSON, checks prediction and probability bounds, checks metrics, and stops its temporary container. In this environment the default PyPI build hit TLS handshake failures; a configurable trusted HTTPS package index was added without disabling certificate verification.
 
-**Deployment evidence:** Local container access was verified at `http://localhost:8000`. Minikube or cloud deployment, its endpoint, and deployment screenshots remain pending.
+**Verified current Docker execution (20 October 2026):** The trusted-index build and isolated container checks completed successfully. The recording container `heart-api-demo` is running with host-only port mapping `127.0.0.1:8001 -> 8000`. `/health` returned `{"status":"ok","model_loaded":true}`. The shared UCI-coded request returned `{"prediction":0,"label":"negative","confidence_positive":0.33645}`. `/metrics` returned HTTP 200 and recorded one successful prediction, latency count 1, and latency sum 0.016678784 seconds in this fresh container. These are actual execution values, not a performance benchmark.
+
+**Deployment evidence:** Follow `docs/OPERATIONS.md` for the actual build and endpoint commands. No Kubernetes context was configured at the last check; enabling Docker Desktop Kubernetes, applying the manifest, obtaining a ready deployment and capturing its endpoint remain pending. A manifest alone is not deployment proof.
 
 ## 8. Monitoring and limitations
 
-The Linux container's `GET /metrics` output recorded `prediction_requests_total{outcome="success"} 1`, confirming one successful inference request. The latency histogram recorded `prediction_latency_seconds_count 1` and `prediction_latency_seconds_sum 0.02333469199948013` seconds, approximately 23.3 ms for that request. The API therefore exposes and records request outcome and latency in Prometheus format. This is basic instrumentation; a production system would still need Prometheus scraping, dashboards, alerts, structured access-controlled logs, drift monitoring, and privacy controls. Limitations include historical clinical practice, limited sample size, population selection, missingness, and possible demographic and measurement bias. Output probabilities are not calibrated medical risk estimates.
+`GET /metrics` exposes prediction outcomes (`success`, `invalid`, `unavailable`, and inference `error`) and a latency histogram. `GET /monitor` provides a live dashboard refreshing every two seconds, showing model readiness, counters, and latency. Structured API logs record method, route, HTTP status and latency, never request-body patient measurements. HTTP tests verify the metrics and dashboard routes, validation counts, and absence of feature values from request logs. A production system still needs durable collection, alerts, authentication, drift monitoring and privacy controls. Historical data, limited sample size, population selection and measurement bias limit interpretation; output probabilities are not calibrated medical risk estimates.
+
+![Live Docker API monitoring and readiness](../screenshots/api_monitoring.png)
 
 ## 9. Conclusion and next steps
 
-The project now includes a trained and tracked model, a containerized FastAPI service, a successful local prediction, and Prometheus request and latency metrics. Next steps include Minikube or cloud deployment, recording CI and deployment evidence, completing author and submission details, and external validation, calibration, subgroup analysis, image scanning, deployment secrets, ingress, and operational monitoring. Do not deploy for patient care.
+The refreshed model, EDA, full MLflow evidence, fixed CI import configuration, 12 passing tests, verified isolated Docker build and inference, request logging, live monitoring dashboard and LoadBalancer manifest are ready locally. Submission still requires a verified Kubernetes deployment, a passing remote CI run after the author pushes, remaining genuine screenshots, and the author's narrated video. Production use would additionally require external validation, calibration, subgroup analysis and operational controls. Do not deploy for patient care.
 
 ## 10. References and evidence
 
 - UCI Machine Learning Repository, [Heart Disease dataset](https://doi.org/10.24432/C52P4X).
 - Assignment 01 instructions supplied by the course.
-- Screenshots: save the Linux container build and API verification screenshots in `screenshots/` before submission.
-- Video: [link to your own short recording].
+- Screenshots: capture the actual MLflow, Docker, API, monitoring, Kubernetes and successful CI views in `screenshots/`. The existing failed-CI image is historical only.
+- Video: not yet recorded. Follow [the timed recording flow](../docs/VIDEO_CHECKLIST.md) and replace this sentence with the actual recording link.
+- Setup, local access and cleanup: [operations guide](../docs/OPERATIONS.md).
