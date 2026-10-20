@@ -23,18 +23,18 @@ Insert generated figures from `reports/figures/` here and discuss observed class
 
 The preprocessing transformer uses median imputation and standardization for numeric features. Coded categories are mode-imputed and one-hot encoded. All steps are in an sklearn Pipeline, and validation folds fit preprocessing independently. Candidates are class-weighted Logistic Regression and Random Forest. Both are compared with shuffled, stratified five-fold cross-validation using accuracy, precision, recall, and ROC-AUC. A small tuning grid is evaluated for the selected candidate using ROC-AUC.
 
-### Actual results (fill after running)
+### Cross-validation results
 
 | Candidate | Accuracy mean ± SD | Precision mean ± SD | Recall mean ± SD | ROC-AUC mean ± SD |
 |---|---:|---:|---:|---:|
-| Logistic Regression | [from MLflow] | [from MLflow] | [from MLflow] | [from MLflow] |
-| Random Forest | [from MLflow] | [from MLflow] | [from MLflow] | [from MLflow] |
+| Logistic Regression | 0.8447 ± 0.0554 | 0.8475 ± 0.0570 | 0.8050 ± 0.0857 | 0.9188 ± 0.0213 |
+| Random Forest | 0.8416 ± 0.0222 | 0.8447 ± 0.0415 | 0.8056 ± 0.0438 | 0.9154 ± 0.0204 |
 
-Selected model: [from `artifacts/training_summary.json`]. Explain the tradeoff and why ROC-AUC was chosen. Small sample size makes fold estimates noisy; avoid claims of clinical performance.
+Logistic Regression was selected by mean ROC-AUC (0.9188 vs. 0.9154). Its mean accuracy and precision were also slightly higher; Random Forest had marginally higher mean recall and lower fold-to-fold standard deviations for accuracy and recall. The differences are small relative to the fold variation, so this comparison does not establish a meaningful performance advantage. The selected Logistic Regression pipeline was tuned with `C=0.1`; its best cross-validated ROC-AUC was 0.9208. This is a tuning estimate on the same dataset, not a held-out test result. The five-fold estimates are noisy because the dataset is small.
 
 ## 4. Experiment tracking and reproducibility
 
-MLflow experiment: `uci-heart-disease-assignment`. Candidate runs record seed, CV procedure, metric means and standard deviations. The EDA run logs figures. The selected pipeline is stored as `artifacts/model.joblib`, with parameters and CV summary in `artifacts/training_summary.json`. Dependencies are listed in `requirements.txt`; stochastic operations use seed 42.
+MLflow experiment: `uci-heart-disease-assignment`. Candidate runs record seed, CV procedure, metric means and standard deviations. The EDA run logs figures. The selected pipeline is stored as `artifacts/model.joblib`, with parameters and CV summary in `artifacts/training_summary.json`. Dependencies are listed in `requirements.txt`; stochastic operations use seed 42. The final MLflow model includes an inferred input/output signature and a three-row input example so its expected schema is visible in the run artifacts.
 
 ## 5. System architecture
 

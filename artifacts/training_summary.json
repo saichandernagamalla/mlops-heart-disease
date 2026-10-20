@@ -1,0 +1,56 @@
+{
+  "selected_model": "logistic_regression",
+  "selection_metric": "mean cross-validated ROC-AUC",
+  "candidate_cv": {
+    "logistic_regression": {
+      "mean": {
+        "accuracy": 0.8446994535519124,
+        "precision": 0.8475270655270656,
+        "recall": 0.8050264550264551,
+        "roc_auc": 0.9188041125541127
+      },
+      "std": {
+        "accuracy": 0.05535969535940173,
+        "precision": 0.05703798309167561,
+        "recall": 0.08573061442220714,
+        "roc_auc": 0.021267059896051755
+      },
+      "run_id": "e02809a6f0db418ab9e3b9dcec0408a9"
+    },
+    "random_forest": {
+      "mean": {
+        "accuracy": 0.8415846994535519,
+        "precision": 0.8446973656029128,
+        "recall": 0.8055555555555556,
+        "roc_auc": 0.9154215768799101
+      },
+      "std": {
+        "accuracy": 0.022217264817761897,
+        "precision": 0.041520939498414074,
+        "recall": 0.04375888492727052,
+        "roc_auc": 0.020444548703048782
+      },
+      "run_id": "8a6502f6b0b34a49b2026dc96c941a0d"
+    }
+  },
+  "tuned_best_params": {
+    "model__C": 0.1
+  },
+  "tuned_cv_roc_auc": 0.9208117885201219,
+  "features": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal"
+  ],
+  "seed": 42
+}
