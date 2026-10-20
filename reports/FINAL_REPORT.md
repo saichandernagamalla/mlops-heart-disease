@@ -53,25 +53,29 @@ flowchart LR
 
 ## 6. CI/CD and testing
 
-GitHub Actions installs dependencies, runs Ruff, unit tests, downloads the dataset, performs a reduced training run, and uploads artifacts. Tests cover target conversion/missing values and API health/prediction response shape. Add your screenshot of a successful workflow run and report failures and fixes.
+GitHub Actions installs dependencies, runs Ruff and unit tests, downloads the dataset, performs a reduced training run, and uploads artifacts. Tests cover target conversion/missing values and API health/prediction response shape. The supplied Actions screenshot shows two runs on `master`, both failed: `mlops-ci #2` for commit `44a7ee3` (45 seconds) and `mlops-ci #1` for commit `372cc59` (57 seconds). This confirms the workflow was triggered, but CI is not yet passing. The run-list screenshot does not show job logs, so the failure cause remains to be diagnosed. Inspect the logs, fix the failure, rerun the workflow, and capture a successful run before submission.
+
+![GitHub Actions workflow runs showing both runs failed](../screenshots/github_actions_ci.png)
 
 ## 7. Packaging, API, and deployment
 
-FastAPI validates input fields and returns a binary prediction with positive-class probability. `GET /health` reports model availability; `GET /metrics` exports request count and latency. Docker packages the trained artifact and API. The included Kubernetes manifest supports Minikube with a NodePort and health probes.
+FastAPI serves the trained pipeline through `POST /predict`. Its request schema validates the 13 model features, and its response includes a binary prediction, a positive/negative label, and positive-class confidence. `GET /health` reports whether the model is loaded; `GET /metrics` exposes Prometheus request and latency data. Docker packages the API with the trained artifact, and the Kubernetes manifest supports Minikube with a NodePort and health probes.
 
-**Deployment evidence:** [insert actual platform, steps, endpoint/access details, date, and screenshots]. The repository does not claim a public deployment until you perform and verify one.
+**Container verification (Linux, 20 October 2026):** The image was built and the API was run on the Linux host with port 8000 published at `http://localhost:8000`. A sample 13-feature JSON request to `POST /predict` returned `{"prediction":0,"label":"negative","confidence_positive":0.355847}`. This confirms the packaged model loaded and served an inference response in the container.
+
+**Deployment evidence:** Local container access was verified at `http://localhost:8000`. Minikube or cloud deployment, its endpoint, and deployment screenshots remain pending.
 
 ## 8. Monitoring and limitations
 
-Request totals by outcome and request latency are exposed in Prometheus format. This is basic instrumentation; a production system would need scraping, dashboards, alerts, structured access-controlled logs, drift monitoring, and privacy controls. Limitations include historical clinical practice, limited sample size, population selection, missingness, and possible demographic and measurement bias. Output probabilities are not calibrated medical risk estimates.
+The Linux container's `GET /metrics` output recorded `prediction_requests_total{outcome="success"} 1`, confirming one successful inference request. The latency histogram recorded `prediction_latency_seconds_count 1` and `prediction_latency_seconds_sum 0.02333469199948013` seconds, approximately 23.3 ms for that request. The API therefore exposes and records request outcome and latency in Prometheus format. This is basic instrumentation; a production system would still need Prometheus scraping, dashboards, alerts, structured access-controlled logs, drift monitoring, and privacy controls. Limitations include historical clinical practice, limited sample size, population selection, missingness, and possible demographic and measurement bias. Output probabilities are not calibrated medical risk estimates.
 
 ## 9. Conclusion and next steps
 
-Summarize verified outcomes in your own words. Next steps include external validation on a current representative cohort, calibration and subgroup analysis, stronger CI gating, image scanning, deployment secrets and ingress, and operational monitoring. Do not deploy for patient care.
+The project now includes a trained and tracked model, a containerized FastAPI service, a successful local prediction, and Prometheus request and latency metrics. Next steps include Minikube or cloud deployment, recording CI and deployment evidence, completing author and submission details, and external validation, calibration, subgroup analysis, image scanning, deployment secrets, ingress, and operational monitoring. Do not deploy for patient care.
 
 ## 10. References and evidence
 
 - UCI Machine Learning Repository, [Heart Disease dataset](https://doi.org/10.24432/C52P4X).
 - Assignment 01 instructions supplied by the course.
-- Screenshots: [list actual files in `screenshots/`].
+- Screenshots: save the Linux container build and API verification screenshots in `screenshots/` before submission.
 - Video: [link to your own short recording].

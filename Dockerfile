@@ -1,8 +1,8 @@
 FROM python:3.11-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_DEFAULT_TIMEOUT=60 PIP_RETRIES=4
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir --timeout=60 --retries=4 -r requirements.txt
 COPY src ./src
 COPY artifacts ./artifacts
 EXPOSE 8000
