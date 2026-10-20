@@ -6,7 +6,7 @@ After `python -m scripts.fetch_data && python -m scripts.train`, run `uvicorn sr
 
 ## Docker proof
 
-From project root: train the model, then `docker build -t heart-mlops:local .` and `docker run --rm -p 8000:8000 heart-mlops:local`. Record your own successful `/health`, sample `/predict`, and `/metrics` output. The trained artifact is copied into the image; rebuild after retraining.
+From project root, run `./scripts/verify_container.ps1` in PowerShell. It builds the image, starts the API, checks `/health`, sends the sample patient to `/predict`, checks `/metrics`, prints a JSON summary, and stops the container. Save the successful output and a screenshot for the report. The trained artifact is copied into the image; rebuild after retraining. Port 8000 must be available.
 
 ## Minikube
 

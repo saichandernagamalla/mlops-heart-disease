@@ -28,6 +28,8 @@ The API loads `artifacts/model.joblib`. It exposes `/health`, `/predict`, and Pr
 curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" -d '{"age":63,"sex":1,"cp":3,"trestbps":145,"chol":233,"fbs":1,"restecg":0,"thalach":150,"exang":0,"oldpeak":2.3,"slope":0,"ca":0,"thal":1}'
 ```
 
+From PowerShell, run `./scripts/verify_container.ps1` to build the image and check `/health`, `/predict`, and `/metrics` in a local container. See `docs/OPERATIONS.md` for the Minikube steps.
+
 See `docs/` for provenance and operating steps, and `reports/FINAL_REPORT.md` for the report draft. The GitHub Actions workflow runs lint, tests, data acquisition, and a training smoke run.
 
 ## Finish your submission
